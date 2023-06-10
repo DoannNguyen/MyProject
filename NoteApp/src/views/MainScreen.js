@@ -1,6 +1,8 @@
-import { Dimensions, FlatList, Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View, Touchable, KeyboardAvoidingViewBase } from 'react-native'
-import {React, useEffect, useState} from 'react';
+import { Dimensions, FlatList, Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import {React, useCallback, useEffect, useState} from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
+import {useRoute} from '@react-navigation/native';
 
 const WindowWidth = Dimensions.get('screen').width;
 const WindowHeight = Dimensions.get('screen').height;
@@ -13,8 +15,9 @@ export default function MainScreen({navigation}) {
   let data1
   let obj 
   let data2 = []
+  const router = useRoute();
 
-  const getData1 = async() => {
+  const getData = async() => {
     try {
       // setKeys(await AsyncStorage.getAllKeys())
       keys = await AsyncStorage.getAllKeys();
@@ -24,24 +27,29 @@ export default function MainScreen({navigation}) {
         obj[key] = JSON.parse(obj[key])
         data2.push(obj[key]);
       })
-      setData(data2)
+      setData(data2);
+      return data
     } catch (error) {
       console.log('something wrong: ', error)
     }
-    
+
   }
+
 
   const delData = async (index) => {
     keys = await AsyncStorage.getAllKeys();
     console.log(keys);
      try {
-       await AsyncStorage.removeItem(keys[index]).then(getData1)
+       await AsyncStorage.removeItem(keys[index]).then(getData)
      } catch (e) {
        console.log('wrong when remove',e)
      }
   }
-  useEffect(() => {
-    getData1()
+
+  useEffect( () => {
+   
+    getData()
+    //console.log('getdata')
   },[]);
 
   const FLRender = ({item, onPress, onPress1}) => (
@@ -82,13 +90,13 @@ export default function MainScreen({navigation}) {
             </TouchableOpacity>
           </View>
         </View>
-        <ScrollView horizontal={true}>
+        <ScrollView horizontal={true} >
           <View>
             <FlatList
               data={data}
               renderItem={({item,index}) => <FLRender item={item} index={index} 
               onPress={() => delData(index)} 
-              onPress1={() => {navigation.navigate('CreateNote',{item});}}/>}
+              onPress1={() => {navigation.navigate('CreateNote',{item})}}/>}
             />
           </View>
         </ScrollView>

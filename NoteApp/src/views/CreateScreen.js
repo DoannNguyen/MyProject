@@ -12,6 +12,10 @@ export default function CreateScreen({navigation}) {
   const [time, setTTime] = useState('');
   const [key, setKey] = useState('')
   const router = useRoute();
+  const [isBold, setIsBold] = useState(false);
+  const [isChangeSize, setIsChangeSize] = useState(false)
+  const [isChangeColor, setIsChaneColor] = useState(false)
+  const [isAlign, setIsAlign] = useState(false)
 
   const storeData = async (key, value) => {
     try {
@@ -24,7 +28,6 @@ export default function CreateScreen({navigation}) {
 
   useEffect(() => {
     if(router.params != undefined){
-      console.log(router)
       setTitle(router.params.item.title)
       setDescription(router.params.item.description)
       setTTime(router.params.item.time)
@@ -39,12 +42,12 @@ export default function CreateScreen({navigation}) {
         key: key,
         title: title,
         description: description,
-        time: time,
+        time: new Date(),
       };
       storeData(myNote.key, myNote);
     }else{
       let myNote = {
-        key: Date.now().toString(),
+        key: Date.now().toFixed(),
         title: title,
         description: description,
         time: new Date(),
@@ -75,16 +78,22 @@ export default function CreateScreen({navigation}) {
           </View>
         </View>
         <View style={styles.viewtcbStyle2}>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => setIsBold(!isBold)}>
             <Image source={require('../images/letter_bold.png')} />
           </TouchableOpacity>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => setIsChangeSize(!isChangeSize)}>
             <Image source={require('../images/text_size.png')} />
           </TouchableOpacity>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => setIsChaneColor(!isChangeColor)}>
             <Image source={require('../images/font_color.png')} />
           </TouchableOpacity>
-          <TouchableOpacity>
+          <TouchableOpacity 
+          onPress={() => {
+            setIsAlign(!isAlign)
+            isAlign
+              ? console.log('chua xong')
+              : console.log('safaf');
+          }}>
             <Image source={require('../images/text_alignment.png')} />
           </TouchableOpacity>
           <TouchableOpacity>
@@ -94,19 +103,31 @@ export default function CreateScreen({navigation}) {
             <Image source={require('../images/bullet.png')} />
           </TouchableOpacity>
         </View>
-        <TextInput placeholder="Title" style={styles.tipTitleStyle} 
+        <TextInput
+          placeholder="Title"
+          style={styles.tipTitleStyle}
           value={title}
-          onChangeText={(text) => setTitle(text)}
+          onChangeText={text => setTitle(text)}
         />
         <TextInput
           placeholder="Description"
-          style={styles.tipDescriptionStyle}
+          style={[
+            styles.tipDescriptionStyle,
+            isBold ? {fontWeight: '600'} : '',
+            isChangeSize ? {fontSize: 18} : '',
+            isChangeColor ? {color: 'red'} : {color: 'black'},
+          ]}
+          
           numberOfLines={20}
           multiline={true}
           value={description}
-          onChangeText={(text) => {setDescription(text)}}
+          onChangeText={text => {
+            setDescription(text);
+          }}
         />
-        <TouchableOpacity style={styles.tcbSaveStyle} onPress={() => save_note()}>
+        <TouchableOpacity
+          style={styles.tcbSaveStyle}
+          onPress={() => save_note()}>
           <Text style={{fontSize: 16, fontWeight: '600', color: '#fff'}}>
             Save
           </Text>
