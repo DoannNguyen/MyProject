@@ -1,59 +1,126 @@
-import { Dimensions, FlatList, Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
-import {React, useCallback, useEffect, useState} from 'react';
+import {
+  Dimensions,
+  Image,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  View,
+  Alert,
+  TextInput,
+} from 'react-native';
+import React, {useCallback, useEffect, useState} from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useFocusEffect } from '@react-navigation/native';
+import {useFocusEffect} from '@react-navigation/native';
+import {useIsFocused} from '@react-navigation/native';
+
 import {useRoute} from '@react-navigation/native';
 
 const WindowWidth = Dimensions.get('screen').width;
 const WindowHeight = Dimensions.get('screen').height;
 
+const formatDate = fmt => {
+  const date = new Date(fmt);
+  const day = date.getDate();
+  const month = date.getMonth() + 1;
+  const year = date.getFullYear();
+  const hrs = date.getHours();
+  const min = date.getMinutes();
+  const sec = date.getSeconds();
+
+  return `${day}/${month}/${year} - ${hrs}:${min}:${sec}`;
+};
 
 export default function MainScreen({navigation}) {
-  const [data, setData] = useState();
-  //const [keys, setKeys] = useState()
-  let keys 
-  let data1
-  let obj 
-  let data2 = []
+  const [data, setData] = useState({});
+  const [sortType, setSortType] = useState();
+  const [dataSearch, setDataSearch] = useState()
+
+  let keys;
+  let data1;
+  let obj;
+  let data2 = [];
   const router = useRoute();
+  const [isHiddenSearchBar, setIsHiddenSearchBar] = useState(true)
 
-  const getData = async() => {
+  const getData1 = async (text) => {
     try {
-      // setKeys(await AsyncStorage.getAllKeys())
-      keys = await AsyncStorage.getAllKeys();
-      data1 = (await AsyncStorage.multiGet(keys))
-      obj = Object.fromEntries(data1)
-      Object.keys(obj).forEach(key => {
-        obj[key] = JSON.parse(obj[key])
-        data2.push(obj[key]);
-      })
-      setData(data2);
-      return data
+      const keys = await AsyncStorage.getAllKeys();
+      const data1 = await AsyncStorage.multiGet(keys);
+      const dataArray = data1.map(item => JSON.parse(item[1]));
+
+      if(text === ''){
+        const sortedData = dataArray.sort((a, b) => {
+          const timeA = new Date(a.time).getTime();
+          const timeB = new Date(b.time).getTime();
+          return timeB - timeA;
+        });
+
+        setData(sortedData);
+      }else{
+        dataArray.filter(item => {
+          if(item.title.match(text)){
+
+            data2.push(item)
+          }
+        })
+        
+        setData(data2)
+        
+      }
+      //console.log(dataArray)
     } catch (error) {
-      console.log('something wrong: ', error)
+      console.log('Error:', error);
     }
-
   }
+  const getData = async () => {
+    try {
+      keys = await AsyncStorage.getAllKeys();
+      data1 = await AsyncStorage.multiGet(keys);
+      obj = Object.fromEntries(data1);
+      Object.keys(obj).forEach(key => {
+        obj[key] = JSON.parse(obj[key]);
+        data2.push(obj[key]);
+        console.log('DATA:' + obj[key]);
+      });
+      setData(data2);
 
+      
+      return data;
+    } catch (error) {
+      console.log('Err: ', error);
+    }
+  };
 
-  const delData = async (index) => {
+  const isFocused = useIsFocused();
+  useEffect(() => {
+    getData1('');
+  }, [isFocused]);
+
+  const delData = async index => {
     keys = await AsyncStorage.getAllKeys();
     console.log(keys);
-     try {
-       await AsyncStorage.removeItem(keys[index]).then(getData)
-     } catch (e) {
-       console.log('wrong when remove',e)
-     }
-  }
+    try {
+      await AsyncStorage.removeItem(keys[index]).then(getData);
+    } catch (e) {
+      console.log('wrong when remove', e);
+    }
+  };
 
-  useEffect( () => {
-   
-    getData()
-    //console.log('getdata')
-  },[]);
+  const handleDel = index => {
+    Alert.alert('Options', 'Delete this note?', [
+      {
+        text: 'Cancel',
+        onPress: () => console.log('Cancel Pressed'),
+      },
+      {text: 'Delete', onPress: () => delData(index)},
+    ]);
+  };
 
   const FLRender = ({item, onPress, onPress1}) => (
-    <TouchableOpacity onPress={onPress1} >
+    <TouchableOpacity onPress={onPress1}>
       <View style={[styles.viewFLRenderStyle, styles.viewFLRenderStyle2]}>
         <Image
           source={require('../images/dot.png')}
@@ -64,10 +131,17 @@ export default function MainScreen({navigation}) {
           <Text style={{fontSize: 12, marginTop: 7}} numberOfLines={1}>
             {item.description}
           </Text>
-          <Text style={{fontSize: 12, marginTop: 11}}>{item.time}</Text>
+          <Text style={{fontSize: 12, marginTop: 11}}>{`Date: ${formatDate(
+            item.time,
+          )}`}</Text>
         </View>
-        <TouchableOpacity style={{position: 'absolute', right: 20, bottom: 15}} onPress={onPress} >
-          <Image source={require('../images/delete.png')} />
+        <TouchableOpacity
+          style={{position: 'absolute', right: 20, bottom: 15}}
+          onPress={onPress}>
+          <Image
+            source={require('../images/delete.png')}
+            style={{flex: 1, aspectRatio: 0.4, resizeMode: 'contain'}}
+          />
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
@@ -76,28 +150,73 @@ export default function MainScreen({navigation}) {
   return (
     <View>
       <SafeAreaView style={styles.container}>
-        <Text style={styles.myNoteStyle}>My Notes</Text>
-        <View style={styles.viewtcbStyle}>
-          <TouchableOpacity>
-            <Image source={require('../images/menu.png')} />
-          </TouchableOpacity>
-          <View style={styles.viewtcbStyle1}>
-            <TouchableOpacity style={{marginRight: 20}}>
-              <Image source={require('../images/search.png')} />
-            </TouchableOpacity>
+        <ScrollView>
+          <Text style={styles.myNoteStyle}>My Notes</Text>
+          <View style={styles.viewtcbStyle}>
             <TouchableOpacity>
-              <Image source={require('../images/more.png')} />
+              <Image
+                source={require('../images/menu.png')}
+                style={{
+                  flex: 1,
+                  aspectRatio: 0.4,
+                  resizeMode: 'contain',
+                  width: 20,
+                  height: 20,
+                }}
+              />
             </TouchableOpacity>
+            <View style={styles.viewtcbStyle1}>
+              <View
+                style={[
+                  {
+                    flexDirection: 'row',
+                    height: 40,
+                    alignItems: 'center',
+                  },
+                  !isHiddenSearchBar
+                    ? {width:  WindowWidth - 140, borderWidth: 1, borderRadius: 20, paddingHorizontal: 10,  }
+                    : {width: 35},
+                ]}>
+                <TextInput
+                  placeholder="search here..."
+                  style={
+                    !isHiddenSearchBar ? {width: '90%'} : {width: 0, height: 0}
+                  }
+                  onChangeText={(text) => getData1(text)}
+                />
+                <TouchableOpacity
+                  style={{marginRight: 20}}
+                  onPress={() => setIsHiddenSearchBar(!isHiddenSearchBar)}>
+                  <Image
+                    source={require('../images/search.png')}
+                    style={{flex: 1, aspectRatio: 0.6, resizeMode: 'contain'}}
+                  />
+                </TouchableOpacity>
+              </View>
+              <TouchableOpacity>
+                <Image
+                  source={require('../images/more.png')}
+                  style={{flex: 1, aspectRatio: 0.4, resizeMode: 'contain'}}
+                />
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
-        <ScrollView horizontal={true} >
           <View>
-            <FlatList
-              data={data}
-              renderItem={({item,index}) => <FLRender item={item} index={index} 
-              onPress={() => delData(index)} 
-              onPress1={() => {navigation.navigate('CreateNote',{item})}}/>}
-            />
+            <ScrollView horizontal={true}>
+              <FlatList
+                data={data}
+                renderItem={({item, index}) => (
+                  <FLRender
+                    item={item}
+                    index={index}
+                    onPress={() => handleDel(index)}
+                    onPress1={() => {
+                      navigation.navigate('CreateNote', {item});
+                    }}
+                  />
+                )}
+              />
+            </ScrollView>
           </View>
         </ScrollView>
         <TouchableOpacity
@@ -112,7 +231,6 @@ export default function MainScreen({navigation}) {
   );
 }
 
-
 const styles = StyleSheet.create({
   container: {
     backgroundColor: '#EEEEEE',
@@ -122,8 +240,9 @@ const styles = StyleSheet.create({
   },
   myNoteStyle: {
     fontSize: 40,
+    marginTop: 30,
     color: '#404040',
-    marginTop: 80
+    textAlign: 'center',
   },
   viewtcbStyle: {
     flexDirection: 'row',
@@ -132,6 +251,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 60,
     marginBottom: 30,
+    marginLeft: 30,
   },
   viewtcbStyle1: {
     flexDirection: 'row',
@@ -140,7 +260,7 @@ const styles = StyleSheet.create({
   createtcbStyle: {
     position: 'absolute',
     right: 15,
-    bottom: 125
+    bottom: 125,
   },
   viewFLRenderStyle: {
     marginVertical: 10,
@@ -154,5 +274,5 @@ const styles = StyleSheet.create({
   },
   viewFLRenderStyle2: {
     elevation: 5,
-  }
+  },
 });

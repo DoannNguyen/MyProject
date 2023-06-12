@@ -1,5 +1,16 @@
-import { SafeAreaView, StyleSheet, Text, TouchableOpacity, View, Image, Dimensions, TextInput } from 'react-native'
-import { React, useState, useEffect } from 'react'
+import {
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  Image,
+  Dimensions,
+  TextInput,
+  Alert,
+  Share
+} from 'react-native';
+import {React, useState, useEffect} from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useRoute} from '@react-navigation/native';
 
@@ -10,12 +21,12 @@ export default function CreateScreen({navigation}) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [time, setTTime] = useState('');
-  const [key, setKey] = useState('')
+  const [key, setKey] = useState('');
   const router = useRoute();
   const [isBold, setIsBold] = useState(false);
-  const [isChangeSize, setIsChangeSize] = useState(false)
-  const [isChangeColor, setIsChaneColor] = useState(false)
-  const [isAlign, setIsAlign] = useState(false)
+  const [isChangeSize, setIsChangeSize] = useState(false);
+  const [isChangeColor, setIsChaneColor] = useState(false);
+  const [isAlign, setIsAlign] = useState(false);
 
   const storeData = async (key, value) => {
     try {
@@ -26,36 +37,63 @@ export default function CreateScreen({navigation}) {
     }
   };
 
-  useEffect(() => {
-    if(router.params != undefined){
-      setTitle(router.params.item.title)
-      setDescription(router.params.item.description)
-      setTTime(router.params.item.time)
-      setKey(router.params.item.key)
+  const onShare = async () => {
+    try {
+      const result = await Share.share({
+        title: `Share note with other phone`,
+        message: `title: ${title} | description: ${description}`,
+      });
+      if (result.action === Share.sharedAction) {
+        if (result.activityType) {
+         console.log(result.activityType)
+        } else {
+          // shared
+        }
+      } else if (result.action === Share.dismissedAction) {
+        console.log('dismis')
+      }
+    } catch (error) {
+      Alert.alert(error.message);
     }
-    
-  },[])
+  };
+
+  useEffect(() => {
+    if (router.params != undefined) {
+      setTitle(router.params.item.title);
+      setDescription(router.params.item.description);
+      setTTime(router.params.item.time);
+      setKey(router.params.item.key);
+    }
+  }, []);
 
   const save_note = () => {
-    if(key != ''){
-      let myNote = {
-        key: key,
-        title: title,
-        description: description,
-        time: new Date(),
-      };
-      storeData(myNote.key, myNote);
-    }else{
-      let myNote = {
-        key: Date.now().toFixed(),
-        title: title,
-        description: description,
-        time: new Date(),
-      };
-      storeData(myNote.key, myNote);
+    if (key != '') {
+      if (title == ' ' || description == '') {
+        Alert.alert('Note', 'You havent written your note yet!');
+      } else {
+        let myNote = {
+          key: key,
+          title: title,
+          description: description,
+          time: new Date(),
+        };
+        storeData(myNote.key, myNote);
+        Alert.alert('Successful', 'Note has been save');
+      }
+    } else {
+      if (title == ' ' || description == '') {
+        Alert.alert('Note', 'You havent written your note yet!');
+      } else {
+        let myNote = {
+          key: Date.now().toFixed(),
+          title: title,
+          description: description,
+          time: new Date(),
+        };
+        storeData(myNote.key, myNote);
+        Alert.alert('Successful', 'Note has been save');
+      }
     }
-
-    
   };
 
   return (
@@ -67,40 +105,65 @@ export default function CreateScreen({navigation}) {
           </TouchableOpacity>
           <View style={styles.viewtcbStyle1}>
             <TouchableOpacity style={styles.tcb}>
-              <Image source={require('../images/link.png')} />
+              <Image
+                source={require('../images/link.png')}
+                style={styles.iconModify}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.tcb} onPress={onShare}>
+              <Image
+                source={require('../images/share.png')}
+                style={styles.iconModify}
+              />
             </TouchableOpacity>
             <TouchableOpacity style={styles.tcb}>
-              <Image source={require('../images/share.png')} />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.tcb}>
-              <Image source={require('../images/more.png')} />
+              <Image
+                source={require('../images/more.png')}
+                style={styles.iconModify}
+              />
             </TouchableOpacity>
           </View>
         </View>
         <View style={styles.viewtcbStyle2}>
           <TouchableOpacity onPress={() => setIsBold(!isBold)}>
-            <Image source={require('../images/letter_bold.png')} />
+            <Image
+              source={require('../images/letter_bold.png')}
+              style={styles.iconTextModify}
+            />
           </TouchableOpacity>
           <TouchableOpacity onPress={() => setIsChangeSize(!isChangeSize)}>
-            <Image source={require('../images/text_size.png')} />
+            <Image
+              source={require('../images/text_size.png')}
+              style={styles.iconTextModify}
+            />
           </TouchableOpacity>
           <TouchableOpacity onPress={() => setIsChaneColor(!isChangeColor)}>
-            <Image source={require('../images/font_color.png')} />
+            <Image
+              source={require('../images/font_color.png')}
+              style={styles.iconTextModify}
+            />
           </TouchableOpacity>
-          <TouchableOpacity 
-          onPress={() => {
-            setIsAlign(!isAlign)
-            isAlign
-              ? console.log('chua xong')
-              : console.log('safaf');
-          }}>
-            <Image source={require('../images/text_alignment.png')} />
+          <TouchableOpacity
+            onPress={() => {
+              setIsAlign(!isAlign);
+              isAlign ? console.log('chua xong') : console.log('safaf');
+            }}>
+            <Image
+              source={require('../images/text_alignment.png')}
+              style={styles.iconTextModify}
+            />
           </TouchableOpacity>
           <TouchableOpacity>
-            <Image source={require('../images/number.png')} />
+            <Image
+              source={require('../images/number.png')}
+              style={styles.iconTextModify}
+            />
           </TouchableOpacity>
           <TouchableOpacity>
-            <Image source={require('../images/bullet.png')} />
+            <Image
+              source={require('../images/bullet.png')}
+              style={styles.iconTextModify}
+            />
           </TouchableOpacity>
         </View>
         <TextInput
@@ -117,7 +180,6 @@ export default function CreateScreen({navigation}) {
             isChangeSize ? {fontSize: 18} : '',
             isChangeColor ? {color: 'red'} : {color: 'black'},
           ]}
-          
           numberOfLines={20}
           multiline={true}
           value={description}
@@ -163,7 +225,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 20,
     paddingHorizontal: 20,
-    backgroundColor: '#F1F1F1',
+    backgroundColor: '#cccc',
+    elevation: 1,
   },
   tipTitleStyle: {
     width: windownWidth - 30,
@@ -188,8 +251,18 @@ const styles = StyleSheet.create({
     height: 50,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: 40,
     borderRadius: 5,
     backgroundColor: '#4285F4',
+  },
+  iconModify: {
+    flex: 1,
+    aspectRatio: 1,
+    resizeMode: 'contain',
+  },
+  iconTextModify: {
+    flex: 1,
+    aspectRatio: 0.4,
+    resizeMode: 'contain',
   },
 });
