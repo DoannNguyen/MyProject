@@ -75,47 +75,29 @@ export default function MainScreen({navigation}) {
       console.log('Error:', error);
     }
   }
-  const getData = async () => {
-    try {
-      keys = await AsyncStorage.getAllKeys();
-      data1 = await AsyncStorage.multiGet(keys);
-      obj = Object.fromEntries(data1);
-      Object.keys(obj).forEach(key => {
-        obj[key] = JSON.parse(obj[key]);
-        data2.push(obj[key]);
-        console.log('DATA:' + obj[key]);
-      });
-      setData(data2);
-
-      
-      return data;
-    } catch (error) {
-      console.log('Err: ', error);
-    }
-  };
 
   const isFocused = useIsFocused();
   useEffect(() => {
     getData1('');
   }, [isFocused]);
 
-  const delData = async index => {
-    keys = await AsyncStorage.getAllKeys();
-    console.log(keys);
+  const delData = async key => {
+   
+    console.log(key);
     try {
-      await AsyncStorage.removeItem(keys[index]).then(getData1);
+      await AsyncStorage.removeItem(key).then(getData1);
     } catch (e) {
       console.log('wrong when remove', e);
     }
   };
 
-  const handleDel = index => {
+  const handleDel = item => {
     Alert.alert('Options', 'Delete this note?', [
       {
         text: 'Cancel',
         onPress: () => console.log('Cancel Pressed'),
       },
-      {text: 'Delete', onPress: () => delData(index)},
+      {text: 'Delete', onPress: () => delData(item.key)},
     ]);
   };
 
@@ -209,7 +191,7 @@ export default function MainScreen({navigation}) {
                   <FLRender
                     item={item}
                     index={index}
-                    onPress={() => handleDel(index)}
+                    onPress={() => handleDel(item)}
                     onPress1={() => {
                       navigation.navigate('CreateNote', {item});
                     }}
