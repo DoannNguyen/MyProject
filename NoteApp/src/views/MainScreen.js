@@ -103,7 +103,7 @@ export default function MainScreen({navigation}) {
     keys = await AsyncStorage.getAllKeys();
     console.log(keys);
     try {
-      await AsyncStorage.removeItem(keys[index]).then(getData);
+      await AsyncStorage.removeItem(keys[index]).then(getData1);
     } catch (e) {
       console.log('wrong when remove', e);
     }
